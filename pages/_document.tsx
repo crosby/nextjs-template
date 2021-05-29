@@ -1,3 +1,4 @@
+import { ServerStyleSheets } from '@material-ui/styles';
 import config from 'config';
 import Document, {
   DocumentContext,
@@ -6,11 +7,27 @@ import Document, {
   Main,
   NextScript,
 } from 'next/document';
+import React from 'react';
 
 class CustomDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
+    const sheets = new ServerStyleSheets();
+    const originalRenderPage = ctx.renderPage;
+
+    ctx.renderPage = () =>
+      originalRenderPage({
+        enhanceApp: (App) => (props) => sheets.collect(<App {...props} />),
+      });
+
     const initialProps = await Document.getInitialProps(ctx);
-    return { ...initialProps };
+
+    return {
+      ...initialProps,
+      styles: [
+        ...React.Children.toArray(initialProps.styles),
+        sheets.getStyleElement(),
+      ],
+    };
   }
 
   render() {
@@ -25,6 +42,10 @@ class CustomDocument extends Document {
                 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
                 })(window,document,'script','dataLayer','${config.gtm.id}');`,
             }}
+          />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Inter"
+            rel="stylesheet"
           />
         </Head>
         <body>
